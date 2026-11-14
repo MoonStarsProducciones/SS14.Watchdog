@@ -153,6 +153,21 @@ namespace SS14.Watchdog.Components.ServerManagement
                     _updateProvider = new UpdateProviderDummy();
                     break;
 
+                case "TraumaGit":
+                    var gitTraumaConfig = configuration
+                        .GetSection($"Servers:Instances:{key}:Updates")
+                        .Get<UpdateProviderTraumaGitConfiguration>();
+
+                    if (gitTraumaConfig == null)
+                        throw new InvalidOperationException("Invalid configuration!");
+
+                    _updateProvider = new UpdateProviderTraumaGit(
+                        this,
+                        gitTraumaConfig,
+                        serviceProvider.GetRequiredService<ILogger<UpdateProviderTraumaGit>>(),
+                        configuration);
+                    break;
+
                 case null:
                     _updateProvider = null;
                     break;

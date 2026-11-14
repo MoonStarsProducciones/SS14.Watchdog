@@ -55,7 +55,14 @@ Servers:
       #Updates:
       #  BaseUrl: "https://builds.spacestation14.io/jenkins"
       #  JobName: "SS14 Content"
-      UpdateType: "Manifest"
+
+      UpdateType: "TraumaGit"
       Updates:
-        ManifestUrl: "https://wizards.cdn.spacestation14.com/fork/wizards/manifest"
-      TimeoutSeconds: 90
+        BaseUrl: "https://github.com/MoonStarsProducciones/Moonlight-station.git"
+        Branch: "master"
+        SwitchEngine: true
+
+      #UpdateType: "Manifest"
+      #Updates:
+      #  ManifestUrl: "https://wizards.cdn.spacestation14.com/fork/wizards/manifest"
+      #TimeoutSeconds: 90
