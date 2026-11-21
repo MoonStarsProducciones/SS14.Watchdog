@@ -42,8 +42,11 @@ namespace SS14.Watchdog.Components.Updates
 
         private async Task<int> CommandHelper(string cd, string command, string[] args, CancellationToken cancel = default)
         {
-            var si = new ProcessStartInfo {
-                FileName = command, CreateNoWindow = true, UseShellExecute = true,
+            var si = new ProcessStartInfo
+            {
+                FileName = command,
+                CreateNoWindow = true,
+                UseShellExecute = true,
                 WorkingDirectory = cd
             };
             // MSDN lied to me! https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.argumentlist?view=net-6.0
@@ -81,8 +84,10 @@ namespace SS14.Watchdog.Components.Updates
         {
             try
             {
-                var si = new ProcessStartInfo {
-                    FileName = command, CreateNoWindow = true,
+                var si = new ProcessStartInfo
+                {
+                    FileName = command,
+                    CreateNoWindow = true,
                     WorkingDirectory = cd,
                     RedirectStandardOutput = true
                 };
@@ -113,7 +118,7 @@ namespace SS14.Watchdog.Components.Updates
         {
             try
             {
-                return await CommandHelper(_repoPath, "git", new[] {"status"}) == 0;
+                return await CommandHelper(_repoPath, "git", new[] { "status" }) == 0;
             }
             catch (Exception)
             {
@@ -123,31 +128,31 @@ namespace SS14.Watchdog.Components.Updates
 
         private async Task<bool> GitFetchOrigin(CancellationToken cancel = default)
         {
-            return await CommandHelper(_repoPath, "git", new[] {"fetch", _baseUrl, _branch}, cancel) == 0;
+            return await CommandHelper(_repoPath, "git", new[] { "fetch", _baseUrl, _branch }, cancel) == 0;
         }
 
         private async Task GitSwitchBranch(CancellationToken cancel = default)
         {
             await CommandHelperChecked($"Failed to switch to branch {_branch}!", _repoPath, "git",
-                new[]{"switch", _branch}, cancel);
+                new[] { "switch", _branch }, cancel);
         }
 
         private async Task GitCheckedSubmoduleUpdate(CancellationToken cancel = default)
         {
             // await CommandHelperChecked("Failed submodule update!", _repoPath, "git", new[] {"submodule", "update", "--init", "--depth=1", "--recursive"}, cancel);
-            await CommandHelperChecked("Failed submodule update!", _repoPath, "python", new[] {"RUN_THIS.py"}, cancel);
+            await CommandHelperChecked("Failed submodule update!", _repoPath, "python", new[] { "RUN_THIS.py" }, cancel);
         }
 
         private async Task GitResetToFetchHead(CancellationToken cancel = default)
         {
-            await CommandHelperChecked("Failed reset to fetch-head", _repoPath, "git", new[] {"reset", "--hard", "FETCH_HEAD"}, cancel);
+            await CommandHelperChecked("Failed reset to fetch-head", _repoPath, "git", new[] { "reset", "--hard", "FETCH_HEAD" }, cancel);
         }
 
         private async Task TryClone(CancellationToken cancel = default)
         {
             _logger.LogTrace("Cloning git repository...");
 
-            if(Directory.Exists(_repoPath))
+            if (Directory.Exists(_repoPath))
                 Directory.Delete(_repoPath, true);
 
             try
@@ -155,14 +160,14 @@ namespace SS14.Watchdog.Components.Updates
                 // NOTE: These are expected to prepare everything including submodules,
                 // because this is used for orbital nuking in the event of an update issue.
                 // The --depth=1 is a performance cheat. Works though.
-                await CommandHelperChecked("Failed initial clone!", "", "git", new[] {"clone", "--depth=1", _baseUrl, _repoPath}, cancel);
+                await CommandHelperChecked("Failed initial clone!", "", "git", new[] { "clone", "--depth=1", _baseUrl, _repoPath }, cancel);
                 await GitFetchOrigin(cancel);
                 await GitResetToFetchHead(cancel);
                 await GitCheckedSubmoduleUpdate(cancel);
             }
             catch (Exception)
             {
-                if(Directory.Exists(_repoPath))
+                if (Directory.Exists(_repoPath))
                     Directory.Delete(_repoPath, true);
                 throw;
             }
@@ -172,7 +177,7 @@ namespace SS14.Watchdog.Components.Updates
         {
             try
             {
-                return (await CommandHelperCheckedStdout("", _repoPath, "git", new[] {"rev-parse", head})).Trim();
+                return (await CommandHelperCheckedStdout("", _repoPath, "git", new[] { "rev-parse", head })).Trim();
             }
             catch (Exception)
             {
@@ -218,10 +223,12 @@ namespace SS14.Watchdog.Components.Updates
             return tag;
         }
 
-        public async Task SwitchEngine(string tag,CancellationToken cancel = default)
+        public async Task SwitchEngine(string tag, CancellationToken cancel = default)
         {
-            await CommandHelperChecked("Failed to delete the engine", _repoPath,"rm", new[] { "-rf", "RobustToolbox" }, cancel);
-            await CommandHelperChecked("Failed to install the wizden engine", _repoPath,"git", new[] { "clone", "--recursive",  "https://github.com/space-wizards/RobustToolbox", "-b", tag}, cancel);
+            if (Directory.Exists(_enginePath))
+                Directory.Delete(_enginePath, true);
+
+            await CommandHelperChecked("Failed to install the wizden engine", _repoPath, "git", new[] { "clone", "--recursive", "https://github.com/space-wizards/RobustToolbox", "-b", tag }, cancel);
         }
 
         public override async Task<string?> RunUpdateAsync(string? currentVersion, string binPath, CancellationToken cancel = default)
@@ -250,7 +257,7 @@ namespace SS14.Watchdog.Components.Updates
                             throw new Exception("Could not fetch origin");
                         await GitResetToFetchHead(cancel);
                         await GitCheckedSubmoduleUpdate(cancel);
-                        await CommandHelperChecked("Not Added remote Wizden", _enginePath, "git", new[] {"remote", "add", "wizden", "https://github.com/space-wizards/RobustToolbox"}, cancel);
+                        await CommandHelperChecked("Not Added remote Wizden", _enginePath, "git", new[] { "remote", "add", "wizden", "https://github.com/space-wizards/RobustToolbox" }, cancel);
                     }
                     catch (Exception ex)
                     {
@@ -282,73 +289,78 @@ namespace SS14.Watchdog.Components.Updates
                     await CommandHelperChecked("Failed to dotnet restore", _repoPath, "dotnet", new[] { "restore" }, cancel);
 
                     await CommandHelperChecked("Failed to build Content Packaging",
-                        _repoPath, "dotnet", new[] { "build", "Content.Packaging","--configuration", "Release", "--no-restore", "/m" }, cancel);
+                        _repoPath, "dotnet", new[] { "build", "Content.Packaging", "--configuration", "Release", "--no-restore", "/m" }, cancel);
                 }
                 else
                     _newPackaging = false;
 
                 var binariesPath = Path.Combine(_serverInstance.InstanceDir, "binaries");
 
-                    // If you get an error here: You need a BaseUrl in the root of appsettings.yml that represents the public URL of the watchdog server.
-                    var binariesRoot = new Uri(new Uri(_configuration["BaseUrl"]!),
-                        $"instances/{_serverInstance.Key}/binaries/");
+                // If you get an error here: You need a BaseUrl in the root of appsettings.yml that represents the public URL of the watchdog server.
+                var binariesRoot = new Uri(new Uri(_configuration["BaseUrl"]!),
+                    $"instances/{_serverInstance.Key}/binaries/");
 
-                    _logger.LogTrace("Building server packages...");
+                _logger.LogTrace("Building server packages...");
 
-                    if (!isFresh && _switchEngine)
+                if (!isFresh && _switchEngine)
+                {
+                    if (Directory.Exists(_enginePath))
                     {
-                        await CommandHelperChecked("Failed to restore the engine", _repoPath, "rm", new[] { "-rf", "RobustToolbox" }, cancel);
-                        await CommandHelperChecked("Failed to restore the engine", _repoPath, "mkdir", new[] { "RobustToolbox" }, cancel);
-                        // Reinstall the quietToolbox
-                        await GitCheckedSubmoduleUpdate(cancel);
+                        Directory.Delete(_enginePath, true);
+                        Directory.CreateDirectory(_enginePath);
                     }
 
-                    if (_newPackaging)
-                    {
-                        await CommandHelperChecked("Failed to build server packages with Content Packaging",
-                            _repoPath, "dotnet", new[] { "run", "--project", "Content.Packaging", "server", "--platform", serverPlatform}, cancel);
-                    }
-                    else
-                        await CommandHelperChecked("Failed to build server packages with Python", _repoPath, "python", new[] {"Tools/package_server_build.py", "-p", serverPlatform}, cancel);
+
+                    // Reinstall the quietToolbox
+                    await GitCheckedSubmoduleUpdate(cancel);
+                }
+
+                if (_newPackaging)
+                {
+                    await CommandHelperChecked("Failed to build server packages with Content Packaging",
+                        _repoPath, "dotnet", new[] { "run", "--project", "Content.Packaging", "server", "--platform", serverPlatform }, cancel);
+                }
+                else
+                    await CommandHelperChecked("Failed to build server packages with Python", _repoPath, "python", new[] { "Tools/package_server_build.py", "-p", serverPlatform }, cancel);
 
 
-                    _logger.LogTrace("Building client packages...");
+                _logger.LogTrace("Building client packages...");
 
-                    if (_switchEngine)
-                    {
-                        var tags = await GetEngineTags(cancel);
-                        await SwitchEngine(tags, cancel);
-                    }
-                    if (_newPackaging)
-                    {
-                        await CommandHelperChecked("Failed to build client packages with Content Packaging",
-                            _repoPath, "dotnet", new[] { "run", "--project", "Content.Packaging", "client", "--no-wipe-release"}, cancel);
-                    }
-                    else
-                        await CommandHelperChecked("Failed to build client packages", _repoPath, "python", new[] {"Tools/package_client_build.py"}, cancel);
+                if (_switchEngine)
+                {
+                    var tags = await GetEngineTags(cancel);
+                    await SwitchEngine(tags, cancel);
+                }
+                if (_newPackaging)
+                {
+                    await CommandHelperChecked("Failed to build client packages with Content Packaging",
+                        _repoPath, "dotnet", new[] { "run", "--project", "Content.Packaging", "client", "--no-wipe-release" }, cancel);
+                }
+                else
+                    await CommandHelperChecked("Failed to build client packages", _repoPath, "python", new[] { "Tools/package_client_build.py" }, cancel);
 
-                    File.Move(Path.Combine(_repoPath, "release", ClientZipName), Path.Combine(binariesPath, ClientZipName), true);
-                    // Unless using Hybrid ACZ, a build.json file must be written.
-                    await using (var stream = File.Open(serverPackage, FileMode.Open))
+                File.Move(Path.Combine(_repoPath, "release", ClientZipName), Path.Combine(binariesPath, ClientZipName), true);
+                // Unless using Hybrid ACZ, a build.json file must be written.
+                await using (var stream = File.Open(serverPackage, FileMode.Open))
+                {
+                    using (var archive = new ZipArchive(stream, ZipArchiveMode.Update))
                     {
-                        using (var archive = new ZipArchive(stream, ZipArchiveMode.Update))
+                        var build = new Build()
                         {
-                            var build = new Build()
-                            {
-                                Download = new Uri(binariesRoot, ClientZipName).ToString(),
-                                Hash = GetFileHash(Path.Combine(binariesPath, ClientZipName)),
-                                Version = actualConfirmedHead,
-                                // Use ACZ version auto-detection.
-                                EngineVersion = "",
-                                ForkId = _baseUrl,
-                            };
-                            ZipArchiveEntry readmeEntry = archive.CreateEntry("build.json");
-                            await using (StreamWriter writer = new StreamWriter(readmeEntry.Open()))
-                            {
-                                await writer.WriteLineAsync(JsonSerializer.Serialize(build));
-                            }
+                            Download = new Uri(binariesRoot, ClientZipName).ToString(),
+                            Hash = GetFileHash(Path.Combine(binariesPath, ClientZipName)),
+                            Version = actualConfirmedHead,
+                            // Use ACZ version auto-detection.
+                            EngineVersion = "",
+                            ForkId = _baseUrl,
+                        };
+                        ZipArchiveEntry readmeEntry = archive.CreateEntry("build.json");
+                        await using (StreamWriter writer = new StreamWriter(readmeEntry.Open()))
+                        {
+                            await writer.WriteLineAsync(JsonSerializer.Serialize(build));
                         }
                     }
+                }
 
                 _logger.LogTrace("Applying server update.");
 
